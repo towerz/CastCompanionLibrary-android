@@ -347,10 +347,10 @@ public class VideoCastControllerFragment extends Fragment implements OnVideoCast
         String imageUrl = null;
         if (null == mSelectedMedia) {
             if (null != mMediaAuthService) {
-                imageUrl = Utils.getImageUrl(mMediaAuthService.getMediaInfo(), 1);
+                imageUrl = Utils.getImageUrl(mMediaAuthService.getMediaInfo(), 0);
             }
         } else {
-            imageUrl = Utils.getImageUrl(mSelectedMedia, 1);
+            imageUrl = Utils.getImageUrl(mSelectedMedia, 0);
         }
         showImage(imageUrl);
         if (null == mSelectedMedia) {
@@ -643,7 +643,7 @@ public class VideoCastControllerFragment extends Fragment implements OnVideoCast
         updateOverallState();
         if (null == mSelectedMedia) {
             if (null != mMediaAuthService) {
-                showImage(Utils.getImageUrl(mMediaAuthService.getMediaInfo(), 1));
+                showImage(Utils.getImageUrl(mMediaAuthService.getMediaInfo(), 0));
             }
         } else {
             updateMetadata();
