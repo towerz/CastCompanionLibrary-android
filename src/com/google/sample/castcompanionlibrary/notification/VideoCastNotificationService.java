@@ -55,6 +55,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import org.json.JSONObject;
+
 /**
  * A service to provide status bar Notifications when we are casting. For JB+ versions, notification
  * area provides a play/pause toggle and an "x" button to disconnect but that for GB, we do not
@@ -69,6 +71,8 @@ public class VideoCastNotificationService extends Service {
     public static final String ACTION_VISIBILITY =
             "com.google.sample.castcompanionlibrary.action.notificationvisibility";
     private static int NOTIFICATION_ID = 1;
+
+    public static final String KEY_NOTIFICATION_SMALL_ICON_ID = "notification_small_icon_id";
 
     private static final String TAG = LogUtils.makeLogTag(VideoCastNotificationService.class);
     private String mApplicationId;
@@ -284,8 +288,17 @@ public class VideoCastNotificationService extends Service {
         String castingTo = getResources().getString(R.string.casting_to_device,
                 mCastManager.getDeviceName());
         rv.setTextViewText(R.id.subTitleView, castingTo);
+        JSONObject mediaCustomData = info.getCustomData();
+        int notificationSmallIcon = R.drawable.ic_stat_action_notification;
+        if (mediaCustomData != null && mediaCustomData.has(KEY_NOTIFICATION_SMALL_ICON_ID)) {
+            try {
+                notificationSmallIcon = mediaCustomData.getInt(KEY_NOTIFICATION_SMALL_ICON_ID);
+            } catch (Exception e) {
+                LOGE(TAG, "Failed to read notification icon data", e);
+            }
+        }
         mNotification = new NotificationCompat.Builder(this)
-                .setSmallIcon(R.drawable.ic_stat_action_notification)
+                .setSmallIcon(notificationSmallIcon)
                 .setContentIntent(resultPendingIntent)
                 .setContent(rv)
                 .setAutoCancel(false)
