@@ -16,7 +16,7 @@
             android:layout_height="wrap_content"
             android:adjustViewBounds="false"
             android:cropToPadding="false"
-            android:scaleType="centerCrop"
+            android:scaleType="centerInside"
             android:src="@drawable/video_placeholder_200x200"/>
 
     </RelativeLayout>
