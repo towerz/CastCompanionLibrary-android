@@ -267,8 +267,8 @@ public class VideoCastControllerActivity extends ActionBarActivity implements IV
         getSupportActionBar().setDisplayShowHomeEnabled(false);
         getSupportActionBar().setDisplayShowTitleEnabled(true);
         getSupportActionBar().setTitle(" "); // without a title, the "<" won't show
-        getSupportActionBar().setBackgroundDrawable(
-                getResources().getDrawable(R.drawable.actionbar_bg_gradient_light));
+        // getSupportActionBar().setBackgroundDrawable(
+                // getResources().getDrawable(R.drawable.actionbar_bg_gradient_light));
     }
 
     @Override
