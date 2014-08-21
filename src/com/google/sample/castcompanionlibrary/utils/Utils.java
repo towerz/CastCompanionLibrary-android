@@ -32,11 +32,15 @@ import android.text.TextUtils;
 
 import com.google.android.gms.cast.MediaInfo;
 import com.google.android.gms.cast.MediaMetadata;
+import com.google.android.gms.cast.MediaTrack;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.images.WebImage;
 import com.google.sample.castcompanionlibrary.R;
 
+import java.util.List;
+
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -53,6 +57,16 @@ public class Utils {
     private static final String KEY_CONTENT_TYPE = "content-type";
     private static final String KEY_STREAM_TYPE = "stream-type";
     private static final String KEY_CUSTOM_DATA = "custom-data";
+
+    // Keys added for serializing track information
+    private static final String KEY_TRACK_ID = "track-id";
+    private static final String KEY_TRACK_CONTENT_ID = "track-custom-id";
+    private static final String KEY_TRACK_NAME = "track-name";
+    private static final String KEY_TRACK_TYPE = "track-type";
+    private static final String KEY_TRACK_SUBTYPE = "track-subtype";
+    private static final String KEY_TRACK_LANGUAGE = "track-language";
+    private static final String KEY_TRACK_CUSTOM_DATA = "track-custom-data";
+    private static final String KEY_TRACKS_DATA = "track-data";
 
     /**
      * Formats time in milliseconds to hh:mm:ss string format.
@@ -282,6 +296,29 @@ public class Utils {
             wrapper.putString(KEY_CUSTOM_DATA, customData.toString());
         }
 
+        // Add media track information to support subtitles
+        if (null != info.getMediaTracks() && !info.getMediaTracks().isEmpty()) {
+            try {
+                JSONArray jsonArray = new JSONArray();
+                for (MediaTrack mt : info.getMediaTracks()) {
+                    JSONObject jsonObject = new JSONObject();
+                    jsonObject.put(KEY_TRACK_NAME, mt.getName());
+                    jsonObject.put(KEY_TRACK_CONTENT_ID, mt.getContentId());
+                    jsonObject.put(KEY_TRACK_ID, mt.getId());
+                    jsonObject.put(KEY_TRACK_LANGUAGE, mt.getLanguage());
+                    jsonObject.put(KEY_TRACK_TYPE, mt.getType());
+                    jsonObject.put(KEY_TRACK_SUBTYPE, mt.getSubtype());
+                    if (null != mt.getCustomData()) {
+                        jsonObject.put(KEY_TRACK_CUSTOM_DATA, mt.getCustomData().toString());
+                    }
+                    jsonArray.put(jsonObject);
+                }
+                wrapper.putString(KEY_TRACKS_DATA, jsonArray.toString());
+            } catch (JSONException e) {
+                LOGE(TAG, "fromMediaInfo(): Failed to convert Tracks data to json", e);
+            }
+        }
+
         return wrapper;
     }
 
@@ -298,7 +335,7 @@ public class Utils {
             return null;
         }
 
-        MediaMetadata metaData = new MediaMetadata(MediaMetadata.MEDIA_TYPE_MOVIE);
+        MediaMetadata metaData = new MediaMetadata(MediaMetadata.MEDIA_TYPE_GENERIC);
 
         metaData.putString(MediaMetadata.KEY_SUBTITLE,
                 wrapper.getString(MediaMetadata.KEY_SUBTITLE));
@@ -320,11 +357,48 @@ public class Utils {
                 LOGE(TAG, "Failed to deserialize the custom data string: custom data= " + customDataStr);
             }
         }
+
+        // Add media track information to support subtitles
+        List<MediaTrack> mediaTracks = null;
+        if (null != wrapper.getString(KEY_TRACKS_DATA)) {
+            try {
+                JSONArray jsonArray = new JSONArray(wrapper.getString(KEY_TRACKS_DATA));
+                mediaTracks = new ArrayList<MediaTrack>();
+                if (null != jsonArray && jsonArray.length() > 0) {
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        JSONObject jsonObj = (JSONObject) jsonArray.get(i);
+                        MediaTrack.Builder builder = new MediaTrack.Builder(
+                                jsonObj.getLong(KEY_TRACK_ID), jsonObj.getInt(KEY_TRACK_TYPE));
+                        if (jsonObj.has(KEY_TRACK_NAME)) {
+                            builder.setName(jsonObj.getString(KEY_TRACK_NAME));
+                        }
+                        if (jsonObj.has(KEY_TRACK_SUBTYPE)) {
+                            builder.setSubtype(jsonObj.getInt(KEY_TRACK_SUBTYPE));
+                        }
+                        if (jsonObj.has(KEY_TRACK_CONTENT_ID)) {
+                            builder.setContentId(jsonObj.getString(KEY_TRACK_CONTENT_ID));
+                        }
+                        if (jsonObj.has(KEY_TRACK_LANGUAGE)) {
+                            builder.setLanguage(jsonObj.getString(KEY_TRACK_LANGUAGE));
+                        }
+                        if (jsonObj.has(KEY_TRACKS_DATA)) {
+                            builder.setCustomData(
+                                    new JSONObject(jsonObj.getString(KEY_TRACKS_DATA)));
+                        }
+                        mediaTracks.add(builder.build());
+                    }
+                }
+            } catch (JSONException e) {
+                LOGE(TAG, "Failed to build media tracks from the wrapper bundle", e);
+            }
+        }
+
         return new MediaInfo.Builder(wrapper.getString(KEY_URL))
                 .setStreamType(wrapper.getInt(KEY_STREAM_TYPE))
                 .setContentType(wrapper.getString(KEY_CONTENT_TYPE))
                 .setMetadata(metaData)
                 .setCustomData(customData)
+                .setMediaTracks(mediaTracks)
                 .build();
     }
 }
